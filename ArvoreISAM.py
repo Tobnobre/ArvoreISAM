@@ -29,10 +29,7 @@ def initialize_index():
     return raiz
 
 def inserir(raiz, chave, dado=None, verbose=False):
-    """
-    Insere um novo registro (chave, dado) na estrutura ISAM.
-    Se verbose=True, exibe o caminho e o custo da operação (nós percorridos).
-    """
+  
     no_atual = raiz
     custo = 0
     caminho = []
@@ -84,11 +81,7 @@ def inserir(raiz, chave, dado=None, verbose=False):
 
 
 def buscar(raiz, chave, verbose=False):
-    """
-    Busca um registro pela chave na estrutura ISAM.
-    Retorna o registro encontrado ou None se não existir.
-    Se verbose=True, exibe o caminho e o custo da operação (nós percorridos).
-    """
+ 
     no_atual = raiz
     custo = 0
     caminho = []
@@ -143,10 +136,71 @@ def buscar(raiz, chave, verbose=False):
     # 3. Se chegou aqui, a chave não foi encontrada em nenhuma página
     return None
 
+def remover(raiz, chave, verbose=False):
+ 
+    no_atual = raiz
+    custo = 0
+    caminho = []
+    
+    # 1. Navegar pelo índice para encontrar a folha primária correta
+    while isinstance(no_atual, IndexNode):
+        custo += 1
+        caminho.append(f"IndexNode({no_atual.keys})")
+        
+        idx_filho = 0
+        # Encontra o ramo correto: avança enquanto a chave for maior ou igual ao separador
+        while idx_filho < len(no_atual.keys) and chave >= no_atual.keys[idx_filho]:
+            idx_filho += 1
+            
+        no_atual = no_atual.children[idx_filho]
+        
+    # Quando o loop termina, no_atual é a página folha primária
+    pagina_atual = no_atual
+    
+    # 2. Percorrer a cadeia de overflow procurando a chave para remover
+    while pagina_atual is not None:
+        custo += 1
+        caminho.append(f"Page({pagina_atual.records})")
+        
+        registro_alvo = None
+        
+        # Procura a chave na página atual
+        for registro in pagina_atual.records:
+            # Verifica se é uma tupla (chave, dado) ou apenas a chave
+            if isinstance(registro, tuple):
+                if registro[0] == chave:
+                    registro_alvo = registro
+                    break
+            else:
+                if registro == chave:
+                    registro_alvo = registro
+                    break
+        
+        # Se encontrou, remove o registro da lista da página
+        if registro_alvo is not None:
+            pagina_atual.records.remove(registro_alvo)
+            
+            if verbose:
+                print(f"--- Remoção: Chave {chave} ---")
+                print(f"Caminho percorrido: {' -> '.join(caminho)}")
+                print(f"Resultado: Registro removido com sucesso!")
+                print(f"Custo total: {custo} nós acessados\n")
+            return True
+            
+        # Se não encontrou na página atual, avança para a próxima página de overflow
+        pagina_atual = pagina_atual.next_overflow
+        
+    # 3. Se chegou aqui, a chave não foi encontrada para remoção
+    if verbose:
+        print(f"--- Remoção: Chave {chave} ---")
+        print(f"Caminho percorrido: {' -> '.join(caminho)}")
+        print(f"Resultado: Registro não encontrado para remoção")
+        print(f"Custo total: {custo} nós acessados\n")
+        
+    return False
+
 def imprimir_estrutura(no, nivel=0):
-    """
-    Função auxiliar para imprimir a estrutura da árvore de forma visual.
-    """
+ 
     if no is None:
         return
     
